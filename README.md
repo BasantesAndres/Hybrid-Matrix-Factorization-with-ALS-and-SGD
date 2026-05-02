@@ -191,8 +191,12 @@ RECSYS GPT/
 
 To compile the project manually, open a terminal in the root directory of the repository and run the following command using `g++`:
 
-```bash
 g++ -std=c++17 main.cpp -Ithird_party/eigen -O2 -o recsys
+After the compilation finishes, execute the program with:
+./recsys
+On Windows PowerShell, run:
+.\recsys.exe
+
 
 ### Supported CLI arguments
 
