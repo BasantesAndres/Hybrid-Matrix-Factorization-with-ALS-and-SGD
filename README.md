@@ -427,7 +427,7 @@ python plots.py
 
 ## 👨‍💻 Author
 
-**Name:** `<Andres Alexander Basantes Balcazar>`  
+**Name:** Andres Alexander Basantes Balcazar
 **Project:** Ranking-Oriented Hybrid Matrix Factorization  
 **Area:** Recommender Systems, Matrix Factorization, Algorithm Analysis  
 **Institution:** Yachay Tech
