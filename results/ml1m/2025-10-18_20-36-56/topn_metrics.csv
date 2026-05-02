@@ -1,0 +1,3 @@
+model,split,K,recall,ndcg,map,coverage,users_evaluated,neg_per_user
+ALS,TEST,10,0.042374,0.033376,0.011856,0.643472,6040,500
+HYBRID,TEST,10,0.049506,0.043777,0.018604,0.536184,6040,500

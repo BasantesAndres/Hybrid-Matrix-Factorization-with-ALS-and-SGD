@@ -1,0 +1,2 @@
+model,split,rmse,mae
+ALS,TEST,0.941150,0.709027
