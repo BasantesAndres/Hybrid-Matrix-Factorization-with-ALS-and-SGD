@@ -187,52 +187,12 @@ RECSYS GPT/
 | pandas | Optional | Required by `plots.py`. |
 | matplotlib | Optional | Required by `plots.py`. |
 
-### 2. Clone or extract the project
+### ▶️ Quick Compilation and Execution
+
+To compile the project manually, open a terminal in the root directory of the repository and run the following command using `g++`:
 
 ```bash
-# If using Git
- git clone <your-repository-url>
- cd "RECSYS GPT"
-```
-
-Or simply extract the ZIP file and open the project folder.
-
-### 3. Compile on Windows
-
-The project includes a ready-to-use build script:
-
-```bat
-build.bat
-```
-
-This produces:
-
-```bash
-bin/recsys.exe
-```
-
-### 4. Manual compilation command
-
-If you prefer compiling manually with `g++`, use:
-
-```bash
-g++ -std=c++17 -O3 -march=native -DEIGEN_NO_DEBUG \
-  -I "include" -I "third_party/eigen" \
-  src/main.cpp src/io.cpp src/split.cpp src/als.cpp src/sgd.cpp src/metrics.cpp src/utils.cpp \
-  -o bin/recsys.exe
-```
-
-> On Linux/macOS, change the output name if desired, for example `-o bin/recsys`.
-
----
-
-## ▶️ Execution
-
-The executable requires at least a dataset path:
-
-```bash
-bin/recsys.exe --data <path-to-ratings-file>
-```
+g++ -std=c++17 main.cpp -Ithird_party/eigen -O2 -o recsys
 
 ### Supported CLI arguments
 
@@ -466,13 +426,6 @@ python plots.py
 **Name:** `<Andres Alexander Basantes Balcazar>`  
 **Project:** Ranking-Oriented Hybrid Matrix Factorization  
 **Area:** Recommender Systems, Matrix Factorization, Algorithm Analysis  
-**Institution:** Not specified in the project files  
-**License:** Not specified in the project files
+**Institution:** Yachay Tech
 
 ---
-
-<div align="center">
-
-### ⭐ If this project is useful for your academic work or portfolio, consider documenting experiments and publishing reproducible results.
-
-</div>
