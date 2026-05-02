@@ -143,12 +143,11 @@ RECSYS GPT/
 │   └── utils.cpp
 ├── third_party/
 │   └── eigen/
-├── build.bat
 ├── plots.py
 └── README.md
 ```
 
-> **Note:** The file `src/main .cpp` includes a space in its name and appears to be a duplicate/legacy copy of `src/main.cpp`. The build script compiles `src/main.cpp`, not `src/main .cpp`.
+> **Note about external files:** The `data/` directory is expected to contain the MovieLens dataset files for the 100K, 1M, and 10M experiments. These `.dat` files were not uploaded to the repository because they are large and should be downloaded directly from the official GroupLens website: https://grouplens.org/datasets/. After downloading the required MovieLens version, extract the files and place them inside the corresponding `data/` subfolder used by the project. Similarly, the `third_party/` directory should contain the Eigen library, which is required for linear algebra operations in the C++ implementation. To install it manually, download Eigen from https://eigen.tuxfamily.org/, extract the package, and copy the `Eigen/` folder into `third_party/eigen/`. The expected structure is `third_party/eigen/Eigen/...`. Once both the datasets and Eigen are placed in the correct folders, the project can be compiled and executed normally.
 
 ---
 
@@ -464,7 +463,7 @@ python plots.py
 
 ## 👨‍💻 Author
 
-**Name:** `<Your Name Here>`  
+**Name:** `<Andres Alexander Basantes Balcazar>`  
 **Project:** Ranking-Oriented Hybrid Matrix Factorization  
 **Area:** Recommender Systems, Matrix Factorization, Algorithm Analysis  
 **Institution:** Not specified in the project files  
