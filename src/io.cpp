@@ -64,6 +64,27 @@ std::vector<Rating> load_movielens_dat(const std::string& filename) {
     return R;
 }
 
+// NUEVA: Para ML-100K (u.data con tabs/espacios)
+std::vector<Rating> load_movielens_100k(const std::string& filename) {
+    std::ifstream in(filename);
+    if (!in) throw std::runtime_error("Cannot open file: " + filename);
+    std::vector<Rating> R;
+    R.reserve(100000);
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.empty()) continue;
+        std::stringstream ss(line);
+        std::string su, si, sr, st;
+        if (!(ss >> su >> si >> sr >> st)) continue; // formato: user item rating timestamp
+        Rating r;
+        r.user   = std::stoi(su) - 1;
+        r.item   = std::stoi(si) - 1;
+        r.rating = std::stof(sr);
+        R.push_back(r);
+    }
+    return R;
+}
+
 DatasetStats infer_stats(const std::vector<Rating>& R) {
     DatasetStats st;
     st.num_ratings = R.size();
