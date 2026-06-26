@@ -1,0 +1,2 @@
+model,split,rmse,mae
+sgd,TEST,0.978608,0.785932

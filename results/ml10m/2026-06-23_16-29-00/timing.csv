@@ -1,0 +1,2 @@
+model,dataset,als_time,sgd_time,eval_time,total_time,seed,k,iters,epochs_sgd
+sgd,ml10m,0.000000,25.639776,25.144236,50.784012,42,50,6,2
