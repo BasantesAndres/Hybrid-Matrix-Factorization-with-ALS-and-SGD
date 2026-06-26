@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 Ranking-Oriented Hybrid Matrix Factorization
+# Accuracy and Ranking Trade-Offs in Hybrid ALS–SGD Matrix Factorization
 
 ### ALS Initialization + SGD Fine-Tuning for Top-N Recommendation in C++17
 
@@ -9,10 +9,10 @@
   <img src="https://img.shields.io/badge/C%2B%2B-17-blue" />
   <img src="https://img.shields.io/badge/Linear%20Algebra-Eigen-orange" />
   <img src="https://img.shields.io/badge/Recommender%20Systems-Matrix%20Factorization-purple" />
-  <img src="https://img.shields.io/badge/License-Not%20Specified-lightgrey" />
+  <img src="https://img.shields.io/badge/Venue-TICEC%202026-red" />
 </p>
 
-**A reproducible recommender-system project that compares ALS and Hybrid ALS → SGD training using Matrix Factorization, rating-prediction metrics, and Top-N ranking evaluation.**
+**A reproducible recommender-system study comparing ALS, SGD, and a Hybrid ALS→SGD training strategy using Matrix Factorization on MovieLens 1M and 10M, evaluated on both rating-prediction and Top-N ranking metrics.**
 
 </div>
 
@@ -29,25 +29,27 @@
 - [▶️ Execution](#️-execution)
 - [🧠 Internal Workflow](#-internal-workflow)
 - [🛠️ Technologies Used](#️-technologies-used)
-- [📊 Metrics and Outputs](#-metrics-and-outputs)
+- [📊 Experimental Results](#-experimental-results)
 - [🧪 Usage Examples](#-usage-examples)
 - [📈 Plotting Results](#-plotting-results)
 - [💡 Development Highlights](#-development-highlights)
 - [🚀 Future Improvements](#-future-improvements)
-- [👨‍💻 Author](#-author)
 
 ---
 
 ## 📌 Description
 
-This project implements a **Matrix Factorization recommender system** in **C++17**. The system trains latent user and item embeddings from sparse rating data and evaluates recommendation quality using both classic prediction metrics and Top-N ranking metrics.
+This repository accompanies the paper **"Accuracy and Ranking Trade-Offs in Hybrid ALS–SGD Matrix Factorization"** submitted to TICEC 2026 (Scientific Track, AI and Data Science axis).
 
-The core idea is to compare two training strategies:
+The project implements a **Matrix Factorization recommender system** in **C++17** and compares three training strategies:
 
-1. **ALS baseline**: Alternating Least Squares is used to learn user and item latent factors by solving regularized least-squares systems.
-2. **Hybrid ALS → SGD model**: ALS first produces a stable initialization, and then Stochastic Gradient Descent performs a short fine-tuning stage without reinitializing the embeddings.
+1. **ALS baseline** — Alternating Least Squares solves regularized least-squares systems block by block to learn user and item latent factors.
+2. **SGD baseline** — Stochastic Gradient Descent processes individual ratings with low per-step cost. Included as an explicit baseline for both rating-prediction and ranking metrics.
+3. **Hybrid ALS → SGD** — ALS runs first to produce a stable initialization; SGD then fine-tunes the same factors for a small number of additional epochs using the same squared-error objective.
 
-The project is designed for experimentation with **MovieLens-style datasets**, including CSV ratings and MovieLens `.dat` files using the `::` separator.
+The key empirical finding is that **SGD achieves the best Top-N ranking metrics** on both MovieLens 1M and 10M, while **ALS achieves the lowest MAE on ML-10M**. The hybrid does not outperform standalone SGD on any metric and incurs 24–49% additional training time relative to ALS alone. These results are discussed in detail in the paper.
+
+> **Note:** The SGD fine-tuning stage minimizes the same squared rating-error loss as ALS. It is not a ranking-oriented or pairwise objective. The ranking differences observed between methods arise from optimization dynamics, not from a different training loss.
 
 ---
 
@@ -55,38 +57,39 @@ The project is designed for experimentation with **MovieLens-style datasets**, i
 
 | Feature | Description |
 |---|---|
-| 🧮 Matrix Factorization | Learns low-dimensional user and item latent vectors. |
-| 🔁 ALS Training | Implements Alternating Least Squares with normal equations and LDLT solving. |
-| ⚡ SGD Fine-Tuning | Applies SGD after ALS initialization for hybrid optimization. |
-| 📊 Rating Metrics | Computes RMSE and MAE on validation/test splits. |
-| 🎯 Top-N Metrics | Computes Recall@K, NDCG@K, MAP@K, coverage, and evaluated users. |
-| 🧪 Dataset Splitting | Performs user-wise random train/validation/test splitting. |
-| 📁 Automatic Results | Saves timestamped CSV reports for error and ranking metrics. |
-| 🧰 CLI Execution | Provides command-line arguments for model, dataset, hyperparameters, and evaluation settings. |
-| 🧬 Eigen Integration | Uses Eigen for dense matrix operations and linear-system solving. |
-| 🖥️ Windows Build Script | Includes `build.bat` for compiling the project with `g++`. |
+| 🧮 Matrix Factorization | Learns low-dimensional user and item latent vectors (bias-free formulation). |
+| 🔁 ALS Training | Alternating Least Squares with normal equations solved via Eigen LDLT. |
+| ⚡ SGD Training | Standalone SGD baseline and hybrid fine-tuning from ALS initialization (`reinit=false`). |
+| 📊 Rating Metrics | RMSE and MAE on the held-out test split. |
+| 🎯 Top-N Metrics | Recall@K, NDCG@K, MAP@K using sampled negative evaluation (500 negatives per user). |
+| 🧪 Dataset Splitting | User-wise 80/10/10 train/validation/test split with fixed seed. |
+| 📁 Automatic Results | Timestamped CSV reports for error and ranking metrics saved under `results/`. |
+| 🧰 CLI Execution | Command-line arguments for model, dataset, hyperparameters, and evaluation settings. |
+| 🧬 Eigen Integration | Dense matrix operations and linear-system solving via Eigen 3.4. |
+| 🖥️ Windows Build Script | `build.bat` for compilation with `g++`. |
 
 ---
 
 ## 🧱 Project Architecture
 
-The project follows a modular C++ architecture. Header files define the public interfaces, while source files contain the implementations. The main execution flow is controlled by `src/main.cpp`.
-
 ```mermaid
 flowchart TD
     A[Input Ratings File] --> B[Data Loader]
     B --> C[Dataset Statistics]
-    C --> D[User-wise Split]
+    C --> D[User-wise Split 80/10/10]
     D --> E[ALS Training]
-    E --> F[ALS Evaluation]
+    D --> F[SGD Training]
     E --> G{Model Type}
-    G -->|als| H[Save ALS Metrics]
-    G -->|hybrid| I[SGD Fine-Tuning]
-    I --> J[Hybrid Evaluation]
-    F --> K[error_metrics.csv]
-    F --> L[topn_metrics.csv]
-    J --> K
+    G -->|als| H[Evaluate ALS]
+    G -->|hybrid| I[SGD Fine-Tuning from ALS init]
+    F --> J[Evaluate SGD]
+    I --> K[Evaluate Hybrid]
+    H --> L[error_metrics.csv]
+    H --> M[topn_metrics.csv]
     J --> L
+    J --> M
+    K --> L
+    K --> M
 ```
 
 ### High-level architecture
@@ -95,9 +98,9 @@ flowchart TD
 |---|---|
 | **Input Layer** | Loads CSV or MovieLens `.dat` rating files. |
 | **Data Layer** | Stores ratings using a lightweight `Rating` struct. |
-| **Split Layer** | Builds train/validation/test partitions per user. |
-| **Model Layer** | Trains ALS and optionally fine-tunes using SGD. |
-| **Evaluation Layer** | Computes RMSE, MAE, Recall@K, NDCG@K, MAP@K, and coverage. |
+| **Split Layer** | Builds train/validation/test partitions per user (seed = 42). |
+| **Model Layer** | Trains ALS, standalone SGD, and optionally the hybrid (ALS → SGD). |
+| **Evaluation Layer** | Computes RMSE, MAE, Recall@K, NDCG@K, MAP@K, coverage (500 sampled negatives per user). |
 | **Output Layer** | Saves metrics into timestamped CSV files under `results/`. |
 
 ---
@@ -120,10 +123,6 @@ RECSYS GPT/
 │       ├── types.hpp
 │       └── utils.hpp
 ├── results/
-│   ├── csv/
-│   │   └── <timestamp>/
-│   │       ├── error_metrics.csv
-│   │       └── topn_metrics.csv
 │   ├── ml1m/
 │   │   └── <timestamp>/
 │   │       ├── error_metrics.csv
@@ -136,7 +135,6 @@ RECSYS GPT/
 │   ├── als.cpp
 │   ├── io.cpp
 │   ├── main.cpp
-│   ├── main .cpp
 │   ├── metrics.cpp
 │   ├── sgd.cpp
 │   ├── split.cpp
@@ -147,72 +145,79 @@ RECSYS GPT/
 └── README.md
 ```
 
-> **Note about external files:** The `data/` directory is expected to contain the MovieLens dataset files for the 100K, 1M, and 10M experiments. These `.dat` files were not uploaded to the repository because they are large and should be downloaded directly from the official GroupLens website: https://grouplens.org/datasets/. After downloading the required MovieLens version, extract the files and place them inside the corresponding `data/` subfolder used by the project. Similarly, the `third_party/` directory should contain the Eigen library, which is required for linear algebra operations in the C++ implementation. To install it manually, download Eigen from https://eigen.tuxfamily.org/, extract the package, and copy the `Eigen/` folder into `third_party/eigen/`. The expected structure is `third_party/eigen/Eigen/...`. Once both the datasets and Eigen are placed in the correct folders, the project can be compiled and executed normally.
+> **External dependencies:** The `data/` directory should contain the MovieLens `.dat` files, available at [https://grouplens.org/datasets/movielens/](https://grouplens.org/datasets/movielens/). The `third_party/` directory should contain the Eigen library, available at [https://eigen.tuxfamily.org/](https://eigen.tuxfamily.org/). Extract the `Eigen/` folder into `third_party/eigen/` so the expected path is `third_party/eigen/Eigen/...`.
 
 ---
 
 ## 🧩 Main Files Explained
 
-| File / Folder | Description | Role inside the Project |
+| File / Folder | Description | Role |
 |---|---|---|
-| `src/main.cpp` | Main program entry point. Parses CLI arguments, loads data, splits the dataset, trains ALS, optionally applies SGD fine-tuning, evaluates metrics, and saves CSV outputs. | Central execution controller. |
-| `src/main .cpp` | Duplicate-looking file with a space in the filename. | Not used by `build.bat`; likely a backup or accidental duplicate. |
-| `include/recsys/types.hpp` | Defines the basic `Rating` and `DatasetStats` structures. | Shared data types across the project. |
-| `src/io.cpp` / `include/recsys/io.hpp` | Implements rating loaders for CSV and MovieLens `.dat` files, dataset-stat inference, and CSV writing. | Handles input/output operations. |
-| `src/split.cpp` / `include/recsys/split.hpp` | Implements user-wise train/validation/test splitting and builds item lists per user. | Prepares data for training and evaluation. |
-| `src/als.cpp` / `include/recsys/als.hpp` | Implements ALS training using normal equations and Eigen LDLT decomposition. | Trains the ALS baseline and initializes the hybrid model. |
-| `src/sgd.cpp` / `include/recsys/sgd.hpp` | Implements SGD training with L2 regularization. Supports `reinit=false` for fine-tuning from existing ALS factors. | Performs the SGD refinement stage in the hybrid model. |
-| `src/metrics.cpp` / `include/recsys/metrics.hpp` | Computes RMSE, MAE, Recall@K, NDCG@K, MAP@K, coverage, and number of evaluated users. | Evaluation module. |
-| `src/utils.cpp` / `include/recsys/utils.hpp` | Provides timestamp generation, directory creation, file-existence checks, and path joining. | Utility support for reproducible result storage. |
-| `build.bat` | Windows batch script that compiles the project using `g++`, C++17, optimization flags, and Eigen include paths. | Main build script. |
-| `bin/recsys.exe` | Precompiled executable included in the project. | Ready-to-run binary for Windows environments. |
-| `third_party/eigen/` | Vendored Eigen headers. | Linear algebra dependency used by ALS, SGD, and metric computation. |
-| `results/` | Contains timestamped CSV files from previous experimental runs. | Stores output metrics. |
-| `plots.py` | Python script for visualizing Recall@10 and NDCG@10 from CSV outputs. | Optional plotting utility. |
-| `.vscode/settings.json` | VS Code file-association configuration for C++ headers and standard-library files. | Development environment support. |
-| `README.md` | Original README contained only the project title. | Replaced by this professional documentation. |
+| `src/main.cpp` | Entry point. Parses CLI arguments, loads data, splits the dataset, trains the selected model(s), evaluates metrics, and saves CSV outputs. | Central execution controller. |
+| `include/recsys/types.hpp` | Defines `Rating` and `DatasetStats` structures. | Shared data types. |
+| `src/io.cpp` / `include/recsys/io.hpp` | Rating loaders for CSV and MovieLens `.dat` files, dataset-stat inference, and CSV writing. | Input/output operations. |
+| `src/split.cpp` / `include/recsys/split.hpp` | User-wise train/validation/test splitting and per-user item lists. | Data preparation. |
+| `src/als.cpp` / `include/recsys/als.hpp` | ALS training using normal equations and Eigen LDLT decomposition. | ALS baseline and hybrid initialization. |
+| `src/sgd.cpp` / `include/recsys/sgd.hpp` | SGD training with L2 regularization. Supports `reinit=false` to fine-tune from existing ALS factors. | SGD baseline and hybrid fine-tuning stage. |
+| `src/metrics.cpp` / `include/recsys/metrics.hpp` | Computes RMSE, MAE, Recall@K, NDCG@K, MAP@K, coverage, and evaluated users. Ranking uses 500 sampled negatives per user. | Evaluation module. |
+| `src/utils.cpp` / `include/recsys/utils.hpp` | Timestamp generation, directory creation, file-existence checks, path joining. | Utility support. |
+| `build.bat` | Compiles the project with `g++`, C++17 flags, and Eigen include paths. | Main build script (Windows). |
+| `bin/recsys.exe` | Precompiled executable for Windows. | Ready-to-run binary. |
+| `third_party/eigen/` | Vendored Eigen headers. | Linear algebra dependency. |
+| `results/` | Timestamped CSV files from experimental runs. Results for ML-1M and ML-10M are included. | Output storage. |
+| `plots.py` | Python script for visualizing RMSE, MAE, Recall@10, and NDCG@10 from CSV outputs. | Optional plotting utility. |
 
 ---
 
 ## ⚙️ Installation
 
-### 1. Requirements
+### Requirements
 
 | Tool | Required? | Notes |
-|---|---:|---|
+|---|---|---|
 | `g++` | ✅ Yes | Must support C++17. |
-| Eigen | ✅ Included | Available under `third_party/eigen/`. |
-| Windows CMD / PowerShell | ✅ Recommended | `build.bat` is designed for Windows. |
+| Eigen 3.4 | ✅ Included | Under `third_party/eigen/`. |
+| Windows CMD / PowerShell | ✅ Recommended | `build.bat` targets Windows. |
 | Python 3 | Optional | Only needed for `plots.py`. |
 | pandas | Optional | Required by `plots.py`. |
 | matplotlib | Optional | Required by `plots.py`. |
 
-### ▶️ Quick Compilation and Execution
+### Compilation
 
-To compile the project manually, open a terminal in the root directory of the repository and run the following command using `g++`:
+Using the provided build script (Windows):
 
-g++ -std=c++17 main.cpp -Ithird_party/eigen -O2 -o recsys
-After the compilation finishes, execute the program with:
-./recsys
-On Windows PowerShell, run:
-.\recsys.exe
+```bash
+build.bat
+```
 
+Or manually with `g++`:
 
-### Supported CLI arguments
+```bash
+g++ -std=c++17 -O3 -Iinclude -Ithird_party/eigen \
+    src/main.cpp src/als.cpp src/sgd.cpp src/io.cpp \
+    src/metrics.cpp src/split.cpp src/utils.cpp \
+    -o bin/recsys
+```
+
+---
+
+## ▶️ Execution
+
+### Supported CLI Arguments
 
 | Argument | Default | Description |
-|---|---:|---|
+|---|---|---|
 | `--data` | Required | Path to the ratings file. |
 | `--format` | `csv` | Input format: `csv`, `ml1m`, or `ml10m`. |
-| `--model` | `hybrid` | Model mode: `als` or `hybrid`. |
+| `--model` | `hybrid` | Model mode: `als`, `sgd`, or `hybrid`. |
 | `--k` | `50` | Number of latent factors. |
 | `--lambda` | `0.2` | L2 regularization coefficient. |
 | `--iters` | `6` | Number of ALS iterations. |
-| `--epochs_sgd` | `2` | Number of SGD fine-tuning epochs. |
+| `--epochs_sgd` | `2` | Number of SGD fine-tuning epochs (hybrid) or training epochs (standalone SGD). |
 | `--lr` | `0.01` | SGD learning rate. |
 | `--K_top` | `10` | Top-K value for ranking evaluation. |
 | `--neg_per_user` | `500` | Number of negative items sampled per user for Top-N evaluation. |
-| `--seed` | `42` | Random seed for deterministic experiments. |
+| `--seed` | `42` | Random seed for reproducibility. |
 | `--val_ratio` | `0.1` | Validation ratio per user. |
 | `--test_ratio` | `0.1` | Test ratio per user. |
 
@@ -220,38 +225,14 @@ On Windows PowerShell, run:
 
 ## 🧠 Internal Workflow
 
-The system executes the following pipeline:
-
-1. **Read ratings**
-   - CSV files are loaded using `load_csv_ratings()`.
-   - MovieLens `.dat` files are loaded using `load_movielens_dat()`.
-
-2. **Infer dataset statistics**
-   - The program computes number of users, number of items, number of ratings, and matrix density.
-
-3. **Split ratings per user**
-   - `make_user_splits()` creates train, validation, and test sets using the configured ratios.
-
-4. **Train ALS**
-   - `train_als()` initializes user matrix `U` and item matrix `V`.
-   - For each ALS iteration:
-     - User factors are updated while item factors are fixed.
-     - Item factors are updated while user factors are fixed.
-   - Linear systems are solved using Eigen's `LDLT` decomposition.
-
-5. **Evaluate ALS**
-   - RMSE and MAE are computed on the test split.
-   - Top-N metrics are computed using sampled negative candidates.
-
-6. **Optional hybrid stage**
-   - If `--model hybrid` is selected, the program calls `train_sgd()` with `reinit=false`.
-   - This means SGD starts from the ALS-trained embeddings instead of random vectors.
-
-7. **Evaluate Hybrid model**
-   - The fine-tuned embeddings are evaluated again using the same metrics.
-
-8. **Save results**
-   - Results are written into timestamped CSV files under `results/<dataset>/<timestamp>/`.
+1. **Load ratings** — CSV via `load_csv_ratings()` or MovieLens `.dat` via `load_movielens_dat()`.
+2. **Infer dataset statistics** — number of users, items, ratings, and matrix density.
+3. **Split per user** — `make_user_splits()` builds train/validation/test sets (80/10/10, seed = 42). Users with fewer than 5 ratings are excluded.
+4. **Train ALS** — `train_als()` initializes `U` and `V`, then alternates block updates solved with Eigen LDLT. Stops at convergence or `--iters` iterations.
+5. **Train standalone SGD** (if `--model sgd`) — `train_sgd()` with `reinit=true` starts from random factors and runs for `--epochs_sgd` epochs.
+6. **Hybrid fine-tuning** (if `--model hybrid`) — `train_sgd()` with `reinit=false` starts from the ALS factors and runs a small number of SGD epochs.
+7. **Evaluate** — RMSE and MAE on the test split; Recall@K, NDCG@K, MAP@K using 500 sampled negatives per user (training items excluded; users without positive test items excluded from ranking evaluation; relevance threshold: rating ≥ 4).
+8. **Save results** — Metrics written to `results/<dataset>/<timestamp>/error_metrics.csv` and `topn_metrics.csv`.
 
 ---
 
@@ -260,94 +241,78 @@ The system executes the following pipeline:
 | Technology | Purpose |
 |---|---|
 | **C++17** | Main implementation language. |
-| **Eigen** | Dense matrix and vector operations, including LDLT linear solving. |
-| **g++** | Compiler used by the provided build script. |
-| **Python** | Optional visualization through `plots.py`. |
+| **Eigen 3.4** | Dense matrix and vector operations, LDLT linear-system solving. |
+| **g++ / GCC 12.2** | Compiler (`-O3` optimization). |
+| **OpenMP** | Parallelism for ALS user/item updates. |
+| **Python 3** | Optional visualization via `plots.py`. |
 | **pandas** | CSV loading for plotting. |
-| **matplotlib** | Bar-chart visualization of ranking metrics. |
-| **VS Code** | Development support through `.vscode/settings.json`. |
+| **matplotlib** | Bar-chart generation. |
 
 ---
 
-## 📊 Metrics and Outputs
+## 📊 Experimental Results
 
-### Rating-prediction metrics
+All results are produced with seed = 42, latent dimension $d = 50$, $\lambda = 0.2$, 6 ALS iterations, and 2 SGD fine-tuning epochs (hybrid) or 20 SGD epochs (standalone). Ranking evaluation uses 500 sampled negatives per user and $K = 10$.
 
-| Metric | Meaning |
-|---|---|
-| **RMSE** | Root Mean Squared Error between true and predicted ratings. Lower is better. |
-| **MAE** | Mean Absolute Error between true and predicted ratings. Lower is better. |
+### Rating-Prediction Accuracy (lower is better)
 
-### Top-N recommendation metrics
+| Dataset | ALS RMSE | ALS MAE | SGD RMSE | SGD MAE | Hybrid RMSE | Hybrid MAE |
+|---|---|---|---|---|---|---|
+| ML-1M  | 1.133 | 0.860 | **0.978** | **0.785** | 1.048 | 0.836 |
+| ML-10M | 0.942 | **0.710** | **0.926** | 0.733 | 0.928 | 0.732 |
 
-| Metric | Meaning |
-|---|---|
-| **Recall@K** | Measures how many relevant test items appear in the Top-K recommendation list. Higher is better. |
-| **NDCG@K** | Measures ranking quality with position-based discounting. Higher is better. |
-| **MAP@K** | Measures precision at ranks where relevant items appear. Higher is better. |
-| **Coverage** | Fraction of the item catalog that appears in at least one recommendation list. Higher can indicate broader catalog exposure. |
+### Top-N Ranking Quality — Recall@10 / NDCG@10 / MAP@10 (higher is better)
 
-### Output files
+| Dataset | ALS | SGD | Hybrid |
+|---|---|---|---|
+| ML-1M  | 0.037 / 0.029 / 0.009 | **0.143 / 0.136 / 0.067** | 0.071 / 0.070 / 0.037 |
+| ML-10M | 0.188 / 0.139 / 0.067 | **0.383 / 0.361 / 0.237** | 0.106 / 0.098 / 0.067 |
 
-Every run creates a timestamped folder like:
+### Training Time (seconds, evaluation excluded)
 
-```bash
-results/ml1m/2025-10-18_20-36-22/
-├── error_metrics.csv
-└── topn_metrics.csv
-```
+| Dataset | ALS | SGD | Hybrid | Overhead vs. ALS |
+|---|---|---|---|---|
+| ML-1M  | 6.20  | 0.60  | 7.71   | +24.3% |
+| ML-10M | 76.23 | 25.63 | 113.64 | +49.0% |
 
-`error_metrics.csv` contains:
-
-```csv
-model,split,rmse,mae
-ALS,TEST,...,...
-HYBRID,TEST,...,...
-```
-
-`topn_metrics.csv` contains:
-
-```csv
-model,split,K,recall,ndcg,map,coverage,users_evaluated,neg_per_user
-ALS,TEST,10,...,...,...,...,...,500
-HYBRID,TEST,10,...,...,...,...,...,500
-```
+**Key takeaway:** SGD is the best choice when Top-N ranking is the primary goal. ALS is the best choice when MAE on large datasets is the priority. The hybrid does not outperform standalone SGD on any metric and adds overhead relative to ALS.
 
 ---
 
 ## 🧪 Usage Examples
 
-### Example 1: Run Hybrid ALS → SGD on a CSV dataset
+### Run standalone SGD on MovieLens 1M
 
 ```bash
 bin/recsys.exe \
-  --data data/ratings.csv \
-  --format csv \
-  --model hybrid \
+  --data data/ml-1m/ratings.dat \
+  --format ml1m \
+  --model sgd \
   --k 50 \
   --lambda 0.2 \
-  --iters 6 \
-  --epochs_sgd 2 \
+  --epochs_sgd 20 \
   --lr 0.01 \
   --K_top 10 \
   --neg_per_user 500 \
   --seed 42
 ```
 
-### Example 2: Run only ALS on MovieLens 1M
+### Run ALS baseline on MovieLens 10M
 
 ```bash
 bin/recsys.exe \
-  --data data/ml-1m/ratings.dat \
-  --format ml1m \
+  --data data/ml-10m/ratings.dat \
+  --format ml10m \
   --model als \
   --k 50 \
   --lambda 0.2 \
   --iters 6 \
-  --K_top 10
+  --K_top 10 \
+  --neg_per_user 500 \
+  --seed 42
 ```
 
-### Example 3: Run Hybrid model on MovieLens 10M
+### Run Hybrid ALS → SGD on MovieLens 10M
 
 ```bash
 bin/recsys.exe \
@@ -360,51 +325,30 @@ bin/recsys.exe \
   --epochs_sgd 2 \
   --lr 0.01 \
   --K_top 10 \
-  --neg_per_user 500
+  --neg_per_user 500 \
+  --seed 42
 ```
-
-> Dataset files are **not included** in the analyzed ZIP. The project expects the user to provide the rating files manually.
 
 ---
 
 ## 📈 Plotting Results
 
-The repository includes a Python plotting script:
-
-```bash
-plots.py
-```
-
-It loads a `topn_metrics.csv` file and creates bar charts for:
-
-- Recall@10
-- NDCG@10
-
-Install the optional Python dependencies:
-
 ```bash
 pip install pandas matplotlib
-```
-
-Run:
-
-```bash
 python plots.py
 ```
 
-> Important: the script currently contains a hardcoded path: `results/ml100k/topn_metrics.csv`. In the provided project structure, generated results are stored inside timestamped folders such as `results/csv/<timestamp>/topn_metrics.csv`, `results/ml1m/<timestamp>/topn_metrics.csv`, or `results/ml10m/<timestamp>/topn_metrics.csv`. Update the path in `plots.py` before running it.
+The script loads `topn_metrics.csv` and `error_metrics.csv` from the results folder and generates bar charts for RMSE, MAE, Recall@10, and NDCG@10. Update the path inside `plots.py` to point to the desired timestamped folder before running.
 
 ---
 
 ## 💡 Development Highlights
 
-- The implementation is intentionally lightweight and readable.
-- ALS and SGD are separated into independent modules.
-- The hybrid model reuses ALS factors as the initialization for SGD.
-- Evaluation includes both error-based and ranking-based metrics.
-- Results are automatically saved with timestamps for experiment tracking.
-- Eigen is included locally, so no separate Eigen installation is required.
-- The CLI makes it easy to test different datasets, seeds, latent dimensions, and model configurations.
+- ALS and SGD are implemented in independent modules; the hybrid reuses ALS factors as the SGD starting point via `reinit=false`.
+- All three methods (ALS, SGD, Hybrid) are evaluated using the same protocol: 80/10/10 split, seed = 42, 500 sampled negatives, relevance threshold ≥ 4.
+- Training time is measured from factor initialization to the end of the last training step; evaluation time is excluded and reported separately.
+- Results are saved with timestamps to prevent overwriting across runs.
+- Eigen is vendored locally; no separate installation is needed.
 
 ---
 
@@ -412,24 +356,25 @@ python plots.py
 
 | Improvement | Motivation |
 |---|---|
-| Add CMake support | Make the project easier to compile across Windows, Linux, and macOS. |
-| Remove duplicate `src/main .cpp` | Avoid confusion caused by duplicate entry-point files. |
-| Add bias terms | Improve rating prediction by modeling global, user, and item biases. |
-| Add OpenMP parallelism | Speed up ALS user/item updates, which are naturally parallelizable. |
-| Add full-ranking evaluation | Current Top-N evaluation uses negative sampling per user. Full ranking would evaluate all candidate items. |
-| Add BPR or pairwise ranking loss | Better align training with Top-N recommendation objectives. |
-| Add configuration files | Store experiment settings in JSON/YAML instead of long CLI commands. |
-| Improve plotting script | Automatically locate latest result folders and generate publication-ready charts. |
-| Add unit tests | Validate loaders, split generation, metrics, and model updates. |
-| Add LICENSE file | The current project does not specify a license. |
+| Add BPR or pairwise ranking loss | Better align SGD training with Top-N recommendation objectives; the current squared-loss SGD is not a ranking-oriented objective. |
+| Add CMake support | Cross-platform compilation (Linux, macOS, Windows). |
+| Full-ranking evaluation | Current Top-N evaluation uses 500 sampled negatives; full ranking would remove approximation bias. |
+| Implicit feedback support | Weighted ALS (confidence-based) for datasets without explicit ratings. |
+| Adaptive optimizers (Adam, AdaError) | Faster convergence and potentially better generalization for the fine-tuning stage. |
+| Statistical significance testing | Paired tests across multiple seeds to validate reported differences. |
+| Configuration files (JSON/YAML) | Replace long CLI commands with reproducible config files. |
+| Unit tests | Validate loaders, split generation, metric computation, and model updates. |
+| Add LICENSE file | The project does not currently specify a license. |
 
 ---
 
-## 👨‍💻 Author
+## 📄 Reference
 
-**Name:** Andres Alexander Basantes Balcazar
-**Project:** Ranking-Oriented Hybrid Matrix Factorization  
-**Area:** Recommender Systems, Matrix Factorization, Algorithm Analysis  
-**Institution:** Yachay Tech
+If you use this code or results, please cite the accompanying paper:
 
----
+```
+Anonymous Author(s). Accuracy and Ranking Trade-Offs in Hybrid ALS–SGD
+Matrix Factorization. TICEC 2026, Scientific Track (under review).
+```
+
+Dataset files are the standard public releases of MovieLens, available at [https://grouplens.org/datasets/movielens/](https://grouplens.org/datasets/movielens/).
